@@ -17,7 +17,7 @@ define ssl::certificate() {
 			unless  => "/usr/bin/test -e /etc/ssl/certs/${name}.pem",
 			require => Exec["create key for ${name}"];
 		"create self-signed certificate for ${name}":
-			command => "/usr/bin/openssl x509 -req -numdays 36500 -in /etc/ssl/${name}.csr -signkey /etc/ssl/private/${name}.pem -out /etc/ssl/certs/${name}.pem",
+			command => "/usr/bin/openssl x509 -req -days 36500 -in /etc/ssl/${name}.csr -signkey /etc/ssl/private/${name}.pem -out /etc/ssl/certs/${name}.pem",
 			require => Exec["create CSR for ${name}"],
 			creates => "/etc/ssl/certs/${name}.pem";
 	}
