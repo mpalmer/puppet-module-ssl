@@ -9,7 +9,7 @@
 define ssl::certificate() {
 	exec {
 		"create key for ${name}":
-			command => "/usr/bin/openssl genrsa -out /etc/ssl/private/${name}.pem",
+			command => "/usr/bin/openssl genrsa -out /etc/ssl/private/${name}.pem 2048",
 			creates => "/etc/ssl/private/${name}.pem";
 		"create CSR for ${name}":
 			command => "/usr/bin/openssl req -new -key /etc/ssl/private/${name}.pem -subj /CN=${name}/ -out /etc/ssl/${name}.csr",
