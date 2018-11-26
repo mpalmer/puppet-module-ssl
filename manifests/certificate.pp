@@ -11,10 +11,10 @@ define ssl::certificate($destdir = "/etc/ssl") {
 
 	exec {
 		"create self-signed certificate for ${title}":
-			command => "/usr/local/bin/generate-self-signed-certificate ${title}",
-			environment => {
-				"DESTDIR" => $destdir,
-			},
-			creates => "${destdir}/certs/${title}.pem",
+			command     => "/usr/local/bin/generate-self-signed-certificate ${title}",
+			environment => [
+				"DESTDIR={$destdir}",
+			],
+			creates     => "${destdir}/certs/${title}.pem",
 	}
 }
