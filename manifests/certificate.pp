@@ -13,7 +13,7 @@ define ssl::certificate($destdir = "/etc/ssl") {
 		"create self-signed certificate for ${title}":
 			command     => "/usr/local/bin/generate-self-signed-certificate ${title}",
 			environment => [
-				"DESTDIR={$destdir}",
+				"DESTDIR=${destdir}",
 			],
 			creates     => "${destdir}/certs/${title}.pem",
 	}
