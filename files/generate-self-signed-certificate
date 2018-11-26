@@ -1,0 +1,74 @@
+#!/usr/bin/env ruby
+#           THIS FILE IS AUTOMATICALLY DISTRIBUTED BY PUPPET
+#                ANY LOCAL CHANGES WILL BE OVERWRITTEN
+#
+
+require 'openssl'
+
+DESTDIR = ENV['DESTDIR'] || '/etc/ssl'
+
+def keyfile(name)
+  "#{DESTDIR}/private/#{name}.pem"
+end
+
+def crtfile(name)
+  "#{DESTDIR}/certs/#{name}.pem"
+end
+
+def key(name)
+  if File.exists? keyfile(name)
+    begin
+      OpenSSL::PKey::RSA.new(File.read(keyfile(name)), '')
+    rescue OpenSSL::PKey::RSAError
+      $stderr.puts "Failed to read key from #{keyfile(name)}"
+      $stderr.puts "The key is either corrupt, or I don't have the passphrase available."
+      $stderr.puts "Please investigate this situation by hand."
+      exit 1
+    end
+  else
+    k = OpenSSL::PKey::RSA.new(2048)
+    File.open(keyfile(name), 'w', 0400) { |fd| fd.write(k.to_s) }
+    k
+  end
+end
+
+def subject(name)
+  # Limit of 64 characters in CNs... sigh
+  OpenSSL::X509::Name.new([["CN", name[0..63]]])
+end
+
+def generate_selfsigned(names)
+  cert = OpenSSL::X509::Certificate.new
+  cert.version    = 2
+  cert.serial     = 1
+  cert.subject    = subject(names.first)
+  cert.issuer     = cert.subject
+  cert.public_key = key(names.first).public_key
+  cert.not_before = Time.now
+  # Ten years should be enough for anyone
+  cert.not_after  = Time.now + (365 * 86400 * 10)
+
+  ef = OpenSSL::X509::ExtensionFactory.new
+
+  ef.subject_certificate = cert
+  ef.issuer_certificate  = cert
+
+  ext = []
+  ext << ef.create_extension('basicConstraints',
+                             'CA:FALSE',
+                             true)
+  ext << ef.create_extension('subjectKeyIdentifier',
+                             'hash',
+                            false)
+  ext << ef.create_extension("subjectAltName",
+                             names.map { |s| "DNS:#{s}" }.join(', '),
+                             false)
+
+  cert.extensions = ext
+
+  cert.sign key(names.first), OpenSSL::Digest::SHA256.new
+
+  File.open(crtfile(names.first), 'w') { |fd| fd.write(cert.to_s) }
+end
+
+generate_selfsigned(ARGV) if __FILE__ == $0

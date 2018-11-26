@@ -7,10 +7,14 @@
 #     The common name of the certificate you wish to ensure exists.
 #
 define ssl::certificate($destdir = "/etc/ssl") {
+	include ssl::script
+
 	exec {
 		"create self-signed certificate for ${title}":
-			command => "/usr/bin/openssl req -x509 -newkey rsa:2048 -nodes -keyout ${destdir}/private/${title}.pem -subj /CN=${title}/ -out ${destdir}/certs/${title}.pem -days 3650",
-			creates => "${destdir}/private/${title}.pem",
-			unless  => "/usr/bin/test -e ${destdir}/certs/${title}.pem";
+			command => "/usr/local/bin/generate-self-signed-certificate ${title}",
+			environment => {
+				"DESTDIR" => $destdir,
+			},
+			creates => "${destdir}/certs/${title}.pem",
 	}
 }
